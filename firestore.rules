@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Firestore access rules.
+//
+// Current posture: nothing reads or writes. The application has no data access yet, so denying
+// everything is the honest rule — a permissive placeholder written "until auth lands" is the kind
+// nobody remembers to tighten, and on a Blaze project that is the expensive kind of forgetting.
+//
+// Per tech-spec.md this product has exactly one user and sign-up is disabled in the console, so the
+// eventual rule is an owner-identity check rather than anything role-based. That lands with the
+// Firestore-and-auth item in implementation-tracking.md's backlog, which is the first stage that
+// has an owner identity to check against.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

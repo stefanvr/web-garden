@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// Cloud Storage access rules — see firestore.rules for the reasoning, which is identical.
+//
+// Nothing reads or writes yet. Photos are the first thing that will need this, and they arrive with
+// the photos item in implementation-tracking.md's backlog, together with the local outbox that
+// Firebase Storage requires because it has no offline upload queue of its own.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
