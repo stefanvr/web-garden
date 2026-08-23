@@ -177,7 +177,6 @@ way, each with what is wrong, why it wasn't fixed then, and what fixing it would
 - [ ] Edge-case sweep against domain-spec
 - [ ] UI/UX pass, on a phone, outdoors
 - [ ] Audit the docs against the actual implementation, and document any remaining gaps
-- [ ] Delete throwaway verification scripts (`~/garden/.scratch/`)
 
 ---
 
