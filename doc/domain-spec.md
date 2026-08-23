@@ -72,7 +72,10 @@ relationship between borders is `kant` plus display order.
 | BK | achter | Keuken met Buurvrouw |
 | BS | achter | Schutting |
 | BV | voor | Voor |
-| BG | ? | **Undocumented** — see open questions |
+| BG | voor | Voor gedeeld |
+
+`BG` — *voor gedeeld* — is the shared front border, which is also what the `Notes` sheet's
+wishlist entry *"iets voor shared"* refers to.
 
 - A border's layout is a rectangular grid. Grids are per border and need not share dimensions.
 - A cell is exactly one of: **planted**, **dirt** (bare soil, plantable), **none** (outside the
@@ -302,10 +305,6 @@ Rules:
 Deliberately unresolved. Each says what is currently true, what the alternative is, and what would
 settle it.
 
-- **`BG` versus `BV`.** The `Borders` sheet documents six borders including `BV` (voor), which never
-  appears in the layout grid. The grid contains a block labelled `BG`, which is not in `Borders`.
-  Seven blocks are populated; six are documented. Settled by the owner looking at the grid and the
-  garden. Until then the seed keeps both and marks them `seeded`.
 - **Ambiguous `bloeiperiode` encodings.** Three incompatible formats are in use — `juli, augustus`
   (list), `juli-september` (range), `maart,april, mei` (list). `augustus, oktober` for
   `duizend-knoop` is genuinely ambiguous: August *and* October, or August *through* October? Only
