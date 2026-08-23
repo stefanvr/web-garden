@@ -33,12 +33,19 @@ deployment-only failures while there are three files rather than three hundred.
 **Try it:** push a commit to `main`; a minute or two later the live Firebase Hosting URL shows the
 change, opened on your phone.
 
-- [ ] Spec
+- [x] Spec — [implementation-spec.md](implementation-spec.md) §6 Application shell, plus a first pass
+      at [environment.md](environment.md) prompted by what the plan review turned up
+- [ ] **Toolchain: upgrade Node to 20 LTS or newer, and install `firebase-tools`.** *Added at plan
+      review, not in the original checklist:* this machine has Node 18.19.1, which is end-of-life and
+      below what both current Vite and `firebase-tools` require. Nothing else in this stage can be
+      verified until it is done
 - [ ] **Owner, in the Firebase console:** create the project; enable Firestore, Storage and Auth; set
       Blaze with a budget cap; disable sign-up so the account list cannot grow
 - [ ] Write those console steps into [environment.md](environment.md) *as they are done*, not from
       memory afterwards — the previous project's README is a good starting point
-- [ ] Vite + TypeScript at the repo root, rendering one identifiable page
+- [ ] Vite + TypeScript at the repo root, rendering the shell of implementation-spec §6 — name plus a
+      build identifier (short commit SHA + build time) injected at build time, which is what makes
+      this stage's **Try it** verifiable rather than a guess
 - [ ] `dev` / `test` / `test:e2e` / `seed:generate` scripts named per the starter convention
 - [ ] Vitest wired, with one assertion that would actually fail if broken
 - [ ] Playwright wired at both viewports, one smoke spec

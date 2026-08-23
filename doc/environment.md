@@ -19,48 +19,107 @@ document exists for.
 
 ## Invariants
 
-What must be true regardless of whose machine it is. These stay true when someone else joins, and
-each one is a property a setup either satisfies or doesn't.
+What must be true regardless of whose machine it is.
 
-- {Runtime} {version} or compatible.
-- {Anything else that would produce broken output rather than an error if wrong.}
+- **Node 20 LTS or newer.** Current Vite and `firebase-tools` both require it, and Node 18 reached
+  end of life in April 2025.
+- **Commits are attributed to the personal identity** (`stefan.van.raaphorst@gmail.com`), not to a
+  work one. See the silent failure below — this does not error when it goes wrong.
+- **`firebase-tools` is available** to deploy hosting and, crucially, the Firestore and Storage
+  rules.
+- **Push access to `github.com:stefanvr/web-garden` over SSH.** HTTPS is not configured and prompts
+  for a username that no credential helper supplies.
 
 ---
 
 ## This machine
 
-How the invariants above are actually satisfied here. Personal to one setup — a second
-contributor replaces this section rather than inheriting it.
+Windows 11 host, WSL Ubuntu 24.04. Personal to one setup; a second contributor replaces this
+section rather than inheriting it.
 
-> ### ⚠️ Starter block — keep if it matches your setup, otherwise delete and write your own
->
-> Filled in from a real project (Windows host + WSL Ubuntu). If that's you, keep it. If not,
-> delete the whole block and describe your actual setup — the point is that *something* concrete
-> lives here, not that it's this.
->
-> **Node/npm live only inside WSL**, not on the Windows host. The working directory is visible to
-> Windows tools as `\\wsl.localhost\Ubuntu-24.04\...`, but every build, install, or run command
-> still has to execute *inside* WSL:
->
-> ```
-> wsl.exe -- bash -lc 'cd ~/{project} && npm test'
-> ```
->
-> Calling `bash` directly from a Windows-side tool reaches Git Bash/mingw, which has no node.
-> Only the `wsl.exe -- bash -lc '...'` form gets to the real environment.
->
-> **`git commit` must run inside WSL too, and this one fails silently.** Windows-side git's global
-> identity is a work email; WSL's is the personal identity matching this repo's owner. Committing
-> through the Windows shell doesn't error — it just attributes the commit to the wrong person, and
-> you find out later. (Discovered exactly that way, after two commits had already landed.)
->
-> **Background processes** (dev servers) need the calling tool's own backgrounding, not `&` inside
-> the `wsl.exe` call — a one-shot `wsl.exe` invocation tears down its children when it exits, so
-> the server dies immediately while the launch command still looks like it succeeded.
->
-> **Quoting.** Nesting a heredoc or an apostrophe inside `bash -lc '...'` breaks in ways whose
-> error messages point somewhere unrelated. Write the file with an editor/tool instead of
-> constructing it in a shell string.
+The repository lives at `~/garden/web-garden` inside WSL, and is visible to Windows tools as
+`\\wsl.localhost\Ubuntu-24.04\home\stefanraaphorst\garden\web-garden`. Work that has to happen
+outside the repository — reference clones, scratch parsing — goes in a sibling folder under
+`~/garden`, not in a system temp directory.
+
+### Silent failures
+
+**Committing from the Windows side attributes the commit to the wrong person.** Verified here, and
+it does not error:
+
+| Side | `user.name` | `user.email` |
+|---|---|---|
+| Windows host | `stefan.van.raaphorst` | `stefan.van.raaphorst@groupm.com` — **work** |
+| WSL | `StefanVR` | `stefan.van.raaphorst@gmail.com` — correct |
+
+Every git command for this repository runs inside WSL. All commits to date are correctly attributed;
+check with `git log --format='%an <%ae>'` before assuming.
+
+**`~/.ssh/config` contains an entry that looks like it covers this repository and does not:**
+
+```
+Host github.com:stefanvr
+  HostName gitlab.com
+```
+
+That alias points at *GitLab*, and does not match a plain `github.com` host anyway. GitHub access
+works because the **default** key (`~/.ssh/id_ed25519`) authenticates as `stefanvr` —
+`ssh -T git@github.com` confirms it. Don't "fix" the remote to use that alias.
+
+**Nesting apostrophes or heredocs inside `wsl.exe -e bash -lc '...'` breaks**, and the error points
+somewhere unrelated (`unexpected EOF while looking for matching`). Hit while writing a document
+containing ordinary English contractions. Write files with an editor or file-writing tool rather
+than constructing them in a shell string; heredocs for *commit messages* are fine as long as the
+surrounding single-quoted string contains no apostrophes.
+
+### Getting to the real environment
+
+Node and npm exist **only inside WSL**. Every install, build, test or run command must execute
+there:
+
+```
+wsl.exe -e bash -lc 'cd ~/garden/web-garden && npm test'
+```
+
+Calling `bash` directly from a Windows-side tool reaches Git Bash/mingw, which has no node, no
+firebase CLI, and the wrong git identity.
+
+**Background processes** (dev servers) need the calling tool's own backgrounding rather than `&`
+inside the `wsl.exe` call: a one-shot `wsl.exe` invocation tears down its children when it exits, so
+the server dies immediately while the launch command still looks like it succeeded. *(Carried from
+the template; not yet hit on this machine.)*
+
+### Current state — does not yet satisfy the invariants
+
+| Tool | Found | Needed |
+|---|---|---|
+| node | **v18.19.1** | 20 LTS or newer — **must be upgraded** |
+| npm | 9.2.0 | comes with the Node upgrade |
+| `firebase-tools` | **not installed** | required |
+| `gh` | not installed, on either side | optional — plain `git` over SSH covers current needs |
+
+Node 18 is the blocking one. It is end-of-life, below what current Vite supports, and below what
+`firebase-tools` requires.
+
+---
+
+## Firebase project setup
+
+Console steps, done once by the owner. Adapted from the previous build's notes, which covered most
+of this already.
+
+- Create the project at <https://console.firebase.google.com/>.
+- Enable **Authentication**, **Firestore**, and **Storage** (keep the default bucket name).
+- **Billing:** settings → billing → Blaze, and set a budget cap. Storage requires it.
+- **Close the door on new accounts:** Authentication → Settings → User actions → uncheck *Enable
+  create (sign-up)*. This product has exactly one user, and an open sign-up on a Blaze project is
+  the wrong kind of surprise.
+- **CI credentials:** `firebase init hosting:github` creates a service account, uploads its key to
+  the repository's secret store itself, and writes the workflow. The previous project's manual
+  `base64 -w0` of a service-account JSON into a CI variable is no longer necessary.
+  - The generated workflow deploys **hosting only**. Deploying `firestore.rules` and
+    `storage.rules` from the same pipeline is added by hand, and the generated service account may
+    need roles beyond hosting deployment to do it.
 
 ---
 

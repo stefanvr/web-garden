@@ -29,34 +29,72 @@ Each section is short bullet-point guidance for *implementing* the feature. Not 
 explaining rationale or backstory, and not restating what domain-spec, tech-spec, or the tracking
 doc already cover.
 
-Favor `circular background visual + title + Start button, per style-guide §9` over several
-paragraphs on why each visual choice was made and how it maps to CSS. That level of detail belongs
-in code comments or the tracking doc.
-
 **2. Describe the end state, not a build log.**
 
 Each section describes the state to reach once its stage finishes — not a chronological history.
-Drop stage references (`(Stage 4)`) once they stop being forward-looking; that history lives in
-the tracking doc and the git log.
-
-References to a *future*, not-yet-built stage are fine and worth keeping — they explain why
-something isn't specced yet ("real filtering lands in Stage 9"). References to past ones just rot,
-and a stale one actively misleads: an unnoticed "X is a placeholder until Stage 3" left in after
-Stage 3 shipped is worse than nothing.
+Drop stage references once they stop being forward-looking; that history lives in the tracking doc
+and the git log.
 
 Sections start `_Not started._` and get filled in when the stage that needs them comes up.
 
 ---
 
-## 1. {Element}
+## 1. Border layout
+
+*(domain-spec §1 — the garden)*
 
 _Not started._
 
-## 2. {Element}
+## 2. Planting detail
+
+*(domain-spec §2 and §3 — what is known about a plant, provenance and review state)*
 
 _Not started._
 
-## {N}. {App-only module}
+## 3. Season view
+
+*(domain-spec §4)*
+
+_Not started._
+
+## 4. Maintenance schedule
+
+*(domain-spec §5)*
+
+_Not started._
+
+## 5. Questions
+
+*(domain-spec §6)*
+
+_Not started._
+
+## 6. Application shell
+
+*(no domain-spec counterpart — application behavior only)*
+
+The frame everything else renders inside. At present it is the whole application.
+
+- Single page. Shows the application name and a **build identifier**, both visible without
+  scrolling at phone width.
+- **Build identifier is short commit SHA + build timestamp**, injected at build time. It exists to
+  make a deploy verifiable from a phone: without it, a landed deploy and a stale cached page look
+  identical, and the deploy pipeline cannot actually be confirmed.
+- No horizontal scroll at phone width. This is asserted by the mobile-viewport E2E run, not by
+  looking.
+- **No service worker yet.** A caching service worker would make a landed deploy look like a failed
+  one, which is precisely the signal this stage exists to establish. It arrives with offline
+  behavior, together with an update strategy that does not strand the user on an old build.
+- No navigation, no sign-in prompt, no data access. Anything beyond name and build identifier
+  belongs to a later section here.
+
+## 7. Photo capture
+
+*(no domain-spec counterpart for the capture flow itself; what a photo attaches to is domain-spec §1)*
+
+_Not started._
+
+## 8. Sync and offline state
 
 *(no domain-spec counterpart — application behavior only)*
 
