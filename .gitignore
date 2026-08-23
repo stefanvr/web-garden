@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Test output
+test-results/
+playwright-report/
+coverage/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Local environment overrides — never commit credentials or machine-specific config
+.env
+.env.local
