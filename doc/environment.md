@@ -15,91 +15,94 @@ machine changes, and mixing the two makes both harder to trust.
 A command that quietly does the *wrong thing* is not, and that's the class of problem this
 document exists for.
 
+> **Keep personal details out of this file.** It is committed, and may be public. Describe the
+> *failure mode* and how to check for it — never paste email addresses, SSH configuration, key
+> names, or absolute paths to someone's home directory. Every warning below is written to be useful
+> without any of that.
+
 ---
 
 ## Invariants
 
 What must be true regardless of whose machine it is.
 
-- **Node 20 LTS or newer.** Current Vite and `firebase-tools` both require it, and Node 18 reached
-  end of life in April 2025.
-- **Commits are attributed to the personal identity** (`stefan.van.raaphorst@gmail.com`), not to a
-  work one. See the silent failure below — this does not error when it goes wrong.
-- **`firebase-tools` is available** to deploy hosting and, crucially, the Firestore and Storage
+- **Node 20 LTS or newer**, and *actually* that version at the moment a command runs — see the first
+  silent failure below. Pinned by `.nvmrc` at the repository root.
+- **Commits carry the personal identity that owns this repository**, not a work identity that may
+  also be configured on the same machine. Verify, don't assume:
+  `git log --format='%an <%ae>' | sort -u`.
+- **`firebase-tools` is available**, to deploy hosting and — crucially — the Firestore and Storage
   rules.
-- **Push access to `github.com:stefanvr/web-garden` over SSH.** HTTPS is not configured and prompts
-  for a username that no credential helper supplies.
+- **Push access to the GitHub remote over SSH.** HTTPS is not configured here and prompts for
+  credentials that no helper supplies.
 
 ---
 
 ## This machine
 
-Windows 11 host, WSL Ubuntu 24.04. Personal to one setup; a second contributor replaces this
-section rather than inheriting it.
+Windows 11 host, WSL Ubuntu 24.04, edited from VS Code on the Windows side. Personal to one setup; a
+second contributor replaces this section rather than inheriting it.
 
-The repository lives at `~/garden/web-garden` inside WSL, and is visible to Windows tools as
-`\\wsl.localhost\Ubuntu-24.04\home\stefanraaphorst\garden\web-garden`. Work that has to happen
-outside the repository — reference clones, scratch parsing — goes in a sibling folder under
-`~/garden`, not in a system temp directory.
+The repository path is **not recorded here** — it is whatever the editor workspace is, and every
+command below is written to work from there without knowing it. Work that has to happen *outside*
+the repository goes in a sibling folder next to it, not in a system temp directory.
 
 ### Silent failures
 
-**Committing from the Windows side attributes the commit to the wrong person.** Verified here, and
-it does not error:
+**1. The Node version depends on which shell flags you use.** This is the dangerous one, because
+both invocations succeed:
 
-| Side | `user.name` | `user.email` |
-|---|---|---|
-| Windows host | `stefan.van.raaphorst` | `stefan.van.raaphorst@groupm.com` — **work** |
-| WSL | `StefanVR` | `stefan.van.raaphorst@gmail.com` — correct |
+| Invocation | Node |
+|---|---|
+| `wsl.exe -e bash -lc '…'` | the **system** Node — old, possibly end-of-life |
+| `wsl.exe -e bash -ic '…'` | **nvm's** Node, the one this project targets |
 
-Every git command for this repository runs inside WSL. All commits to date are correctly attributed;
-check with `git log --format='%an <%ae>'` before assuming.
+nvm initialises from the interactive shell startup file, so a *login* shell (`-l`) never loads it
+and silently falls back to whatever the distribution installed. A build, test run or deploy can
+complete on the wrong runtime and simply behave differently. **Use `-ic` (or `-lic`).** Check with
+`wsl.exe -e bash -ic 'node -v'` before trusting a result that depends on the runtime.
 
-**`~/.ssh/config` contains an entry that looks like it covers this repository and does not:**
+**2. Committing from the Windows side attributes the commit to the wrong person.** The Windows host
+and WSL each carry their own global git identity, and on this machine they differ — one is a work
+identity, one is the personal identity this repository should use. Git does not warn; the commit
+simply lands under the wrong name. **Run every git command for this repository inside WSL**, and
+check attribution with the `git log` command in the invariants above.
 
-```
-Host github.com:stefanvr
-  HostName gitlab.com
-```
+**3. An SSH host alias exists that resembles this repository's host but resolves somewhere else.**
+Pushing works over the default key — confirm with `ssh -T git@github.com`, which names the
+authenticated account. Do not "fix" the remote to use that alias.
 
-That alias points at *GitLab*, and does not match a plain `github.com` host anyway. GitHub access
-works because the **default** key (`~/.ssh/id_ed25519`) authenticates as `stefanvr` —
-`ssh -T git@github.com` confirms it. Don't "fix" the remote to use that alias.
-
-**Nesting apostrophes or heredocs inside `wsl.exe -e bash -lc '...'` breaks**, and the error points
-somewhere unrelated (`unexpected EOF while looking for matching`). Hit while writing a document
-containing ordinary English contractions. Write files with an editor or file-writing tool rather
-than constructing them in a shell string; heredocs for *commit messages* are fine as long as the
+**4. Nesting apostrophes or heredocs inside `bash -ic '…'` breaks**, and the error points somewhere
+unrelated (`unexpected EOF while looking for matching`). Hit while writing a document containing
+ordinary English contractions. Write files with an editor or file-writing tool rather than
+constructing them in a shell string; heredocs for *commit messages* are fine, as long as the
 surrounding single-quoted string contains no apostrophes.
 
 ### Getting to the real environment
 
-Node and npm exist **only inside WSL**. Every install, build, test or run command must execute
-there:
+Node, npm and the project toolchain exist **only inside WSL**. Calling `bash` directly from a
+Windows-side tool reaches Git Bash/mingw, which has none of them and the wrong git identity.
+
+`wsl.exe` **inherits the Windows working directory**, so commands run from the editor workspace need
+no path at all:
 
 ```
-wsl.exe -e bash -lc 'cd ~/garden/web-garden && npm test'
+wsl.exe -e bash -ic 'npm test'
 ```
-
-Calling `bash` directly from a Windows-side tool reaches Git Bash/mingw, which has no node, no
-firebase CLI, and the wrong git identity.
 
 **Background processes** (dev servers) need the calling tool's own backgrounding rather than `&`
 inside the `wsl.exe` call: a one-shot `wsl.exe` invocation tears down its children when it exits, so
 the server dies immediately while the launch command still looks like it succeeded. *(Carried from
-the template; not yet hit on this machine.)*
+the template; not yet hit here.)*
 
-### Current state — does not yet satisfy the invariants
+### Current state
 
-| Tool | Found | Needed |
-|---|---|---|
-| node | **v18.19.1** | 20 LTS or newer — **must be upgraded** |
-| npm | 9.2.0 | comes with the Node upgrade |
-| `firebase-tools` | **not installed** | required |
-| `gh` | not installed, on either side | optional — plain `git` over SSH covers current needs |
-
-Node 18 is the blocking one. It is end-of-life, below what current Vite supports, and below what
-`firebase-tools` requires.
+| Tool | Status |
+|---|---|
+| nvm | installed, with Node 20 LTS as the default |
+| node | 20 LTS **when invoked correctly** — see silent failure 1 |
+| `firebase-tools` | **not installed** — needed for stage 1 |
+| `gh` | not installed on either side; plain `git` over SSH covers current needs |
 
 ---
 
@@ -115,8 +118,8 @@ of this already.
   create (sign-up)*. This product has exactly one user, and an open sign-up on a Blaze project is
   the wrong kind of surprise.
 - **CI credentials:** `firebase init hosting:github` creates a service account, uploads its key to
-  the repository's secret store itself, and writes the workflow. The previous project's manual
-  `base64 -w0` of a service-account JSON into a CI variable is no longer necessary.
+  the repository's secret store itself, and writes the workflow. No manual base64 of a
+  service-account JSON into a CI variable is needed.
   - The generated workflow deploys **hosting only**. Deploying `firestore.rules` and
     `storage.rules` from the same pipeline is added by hand, and the generated service account may
     need roles beyond hosting deployment to do it.

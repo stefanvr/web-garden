@@ -35,10 +35,10 @@ change, opened on your phone.
 
 - [x] Spec — [implementation-spec.md](implementation-spec.md) §6 Application shell, plus a first pass
       at [environment.md](environment.md) prompted by what the plan review turned up
-- [ ] **Toolchain: upgrade Node to 20 LTS or newer, and install `firebase-tools`.** *Added at plan
-      review, not in the original checklist:* this machine has Node 18.19.1, which is end-of-life and
-      below what both current Vite and `firebase-tools` require. Nothing else in this stage can be
-      verified until it is done
+- [ ] **Toolchain: pin Node 20 with `.nvmrc`, and install `firebase-tools`.** *Added at plan review,
+      not in the original checklist:* nvm already provides Node 20, but a login shell (`bash -lc`)
+      never loads nvm and silently falls back to the end-of-life system Node. Both invocations
+      succeed, so this fails quietly rather than loudly — see [environment.md](environment.md)
 - [ ] **Owner, in the Firebase console:** create the project; enable Firestore, Storage and Auth; set
       Blaze with a budget cap; disable sign-up so the account list cannot grow
 - [ ] Write those console steps into [environment.md](environment.md) *as they are done*, not from
