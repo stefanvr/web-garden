@@ -40,7 +40,7 @@ demonstrable.
 Pick one and say which in this doc. Either works; not knowing which is in use is what causes
 trouble.
 
-> **Integration branch for this project:** `{main | long-running branch name}`
+> **Integration branch for this project:** `main`
 
 One branch per stage keeps a stage's history reviewable as a unit, and reverting it a single
 operation.
