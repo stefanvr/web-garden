@@ -35,27 +35,53 @@ change, opened on your phone.
 
 - [x] Spec — [implementation-spec.md](implementation-spec.md) §6 Application shell, plus a first pass
       at [environment.md](environment.md) prompted by what the plan review turned up
-- [ ] **Toolchain: pin Node 20 with `.nvmrc`, and install `firebase-tools`.** *Added at plan review,
-      not in the original checklist:* nvm already provides Node 20, but a login shell (`bash -lc`)
-      never loads nvm and silently falls back to the end-of-life system Node. Both invocations
-      succeed, so this fails quietly rather than loudly — see [environment.md](environment.md)
-- [ ] **Owner, in the Firebase console:** create the project; enable Firestore, Storage and Auth; set
-      Blaze with a budget cap; disable sign-up so the account list cannot grow
-- [ ] Write those console steps into [environment.md](environment.md) *as they are done*, not from
-      memory afterwards — the previous project's README is a good starting point
-- [ ] Vite + TypeScript at the repo root, rendering the shell of implementation-spec §6 — name plus a
-      build identifier (short commit SHA + build time) injected at build time, which is what makes
-      this stage's **Try it** verifiable rather than a guess
-- [ ] `dev` / `test` / `test:e2e` / `seed:generate` scripts named per the starter convention
-- [ ] Vitest wired, with one assertion that would actually fail if broken
-- [ ] Playwright wired at both viewports, one smoke spec
-- [ ] `firebase init hosting:github` — creates the service account, uploads its key as a repo secret,
-      writes the workflow
-- [ ] Extend that workflow to deploy Firestore and Storage rules too; grant the generated service
-      account whatever roles that needs. **The generated workflow deploys hosting only** — this is
-      the step that is easy to discover months late
-- [ ] `firestore.rules` and `storage.rules` denying everything except the one owner account
-- [ ] Verify the whole loop end to end from a phone, not from the dev machine
+- [x] **Toolchain: pin Node 20 with `.nvmrc`, and install `firebase-tools`.** *Added at plan review,
+      not in the original checklist.* The original diagnosis was wrong and the truth was worse: nvm
+      already had Node 20, and the v18 reading came from the shell invocation rather than the
+      machine. `bash -lc` never sources nvm and falls back to the end-of-life system Node, while
+      `bash -ic` gets 20 — both succeed, so a build could complete on the wrong runtime and merely
+      behave differently
+- [x] **Owner, in the Firebase console:** project `svr-garden` created, Firestore/Storage/Auth
+      enabled, Blaze with a budget cap, sign-up disabled
+- [x] Console steps written into [environment.md](environment.md) as they were done
+- [x] Vite + TypeScript at the repo root, rendering the shell of implementation-spec §6, with the
+      build identifier injected at build time
+- [x] Scripts named per the starter convention — `dev` / `test` / `test:e2e`. **`seed:generate`
+      deliberately not added yet:** a script name pointing at a script that does not exist is worse
+      than an absent one, so it arrives with stage 2. `typecheck` added beyond the convention,
+      because CI needed something to call
+- [x] Vitest wired — three assertions, all of which fail if the behaviour breaks: the identifier
+      pairing, the UTC formatting, and degrading to `unknown` rather than throwing
+- [x] Playwright wired at both viewports — two specs, four runs, all passing. The horizontal-scroll
+      assertion is not decoration: the identifier is the longest unbreakable-looking string on the
+      page and the most likely thing to force a phone to scroll sideways
+- [x] `firebase init hosting:github` — service account created, key uploaded to the repository
+      secret store by the CLI, both workflows generated
+- [x] Extend that workflow to deploy Firestore and Storage rules too. Rules go out **before**
+      hosting, so a new bundle never lands against rules that predate it. The pull-request workflow
+      deliberately does *not* deploy rules — they are project-wide with no per-channel equivalent,
+      so shipping them from a PR would apply unreviewed rules to live data
+- [x] `firestore.rules` and `storage.rules` — **diverged from the plan:** they deny *everything*, not
+      "everything except the one owner account". There is no owner identity in the application yet,
+      so an owner check would have been a permissive-looking placeholder with nothing behind it. The
+      real check lands with the Firestore-and-auth backlog item, which is the first stage that has an
+      identity to check against
+- [ ] Verify the whole loop end to end from a phone, not from the dev machine — **pending merge to
+      `main`**, since that is what the deploy workflow triggers on
+
+### Ad hoc — found and fixed along the way
+
+- [x] `firebase init` wrote `"public": "public"` into `firebase.json` despite `dist` being the
+      answer given. Left alone it would have deployed the CLI placeholder page — a site that loads
+      perfectly and shows the wrong thing. Corrected, and the placeholder deleted
+- [x] The CLI also installed 88 files of agent-skill documentation across 12 skills, most for
+      products this project does not use. Gitignored rather than committed: CLI-regenerable, useful
+      locally, and exactly the kind of vendor content that goes stale unnoticed
+- [x] Typecheck needed `allowImportingTsExtensions` (imports name `.ts` explicitly) and
+      `@types/node` (for the config files, which use `process` and `node:child_process`)
+- [x] Two WSL tooling hangs recorded in [environment.md](environment.md): `firebase login` waits on
+      a browser that does not exist, and `npx playwright install --with-deps` waits on a `sudo`
+      password prompt with no stdin to answer it
 
 ## Stage 2 — Seed the catalogue
 

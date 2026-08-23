@@ -78,6 +78,26 @@ ordinary English contractions. Write files with an editor or file-writing tool r
 constructing them in a shell string; heredocs for *commit messages* are fine, as long as the
 surrounding single-quoted string contains no apostrophes.
 
+### Tools that assume a desktop
+
+These don't fail silently — they hang, which is its own kind of time sink because nothing indicates
+what is being waited for.
+
+**`firebase login` cannot open a browser.** There is no browser inside WSL, so the CLI waits on one
+that never appears. Two ways through:
+
+- `firebase login --no-localhost` — prints a URL instead of launching anything. Authorise it in a
+  Windows browser and paste the returned code back.
+- Give WSL a browser once, in `~/.bashrc` (the file the `-ic` invocation sources):
+  `export BROWSER="/mnt/c/Program Files/Google/Chrome/Application/chrome.exe"`. Plain
+  `firebase login` then works, because WSL2 forwards Windows localhost into the distro so the OAuth
+  callback reaches the CLI. This also fixes anything else that wants to open a URL.
+
+**`npx playwright install --with-deps` hangs.** The `--with-deps` part shells out to
+`sudo apt-get`, and a non-interactive shell has no stdin to answer the password prompt with. Use
+`npx playwright install chromium` without it; the browser download itself needs no privileges, and
+the system libraries it would install are already present here.
+
 ### Getting to the real environment
 
 Node, npm and the project toolchain exist **only inside WSL**. Calling `bash` directly from a
