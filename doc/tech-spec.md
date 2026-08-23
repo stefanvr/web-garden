@@ -33,7 +33,7 @@ against its own merits.
 
 - **App:** static single-page PWA. No server-rendered pages, no application server.
 - **Language:** TypeScript.
-- **UI:** React via Vite. *(Confirm — see the decision below.)*
+- **UI:** No framework. TypeScript modules rendering SVG and DOM directly, bundled by Vite.
 - **Local store:** IndexedDB, via Firestore's own offline persistence.
 - **Data:** Cloud Firestore.
 - **Photos:** Firebase Storage.
@@ -56,6 +56,14 @@ against its own merits.
   application; the journal, check-offs, photos and review states live in Firestore.
 - **Months are integers 1–12 internally.** Dutch month names are display, with exactly one mapping
   table. No Dutch string is ever compared for scheduling.
+- **Geometry lives outside the renderer.** Which cell contains a point, and what outline a planting's
+  cell set makes, are pure functions over the layout — not SVG code. Swapping SVG for canvas later
+  must be replacing a draw function, not rewriting the interaction.
+- **Views re-render from state; they do not patch themselves.** A view exposes one `render(state)`
+  that rebuilds its subtree, rather than mutating individual nodes in event handlers. With roughly a
+  thousand SVG elements in the largest view, full rebuild is imperceptible, and it removes the entire
+  class of bug where one path forgets to update something. This rule is what makes going without a
+  framework safe; without it, the decision below is a bad one.
 
 ## Tooling
 
@@ -161,21 +169,62 @@ one-shot event with no diff, no history, and no way to re-run it after fixing th
 repository. The file is the *starting point and fallback*, not the live copy. Re-seeding is
 deliberately a fresh-start operation, not a merge.
 
-### React via Vite — needs confirmation
+### SVG for the border layout
 
-**Chosen:** React and TypeScript, built by Vite, with a PWA plugin for the service worker.
+**Chosen:** SVG.
 
-**Why:** Familiar from the previous build, so no learning cost; Vite's configuration is a single
-short file that does not rot; the output is static files that Firebase Hosting serves directly.
+**Why:** Tapping a cell is the primary navigation of the whole product, and SVG keeps that as a
+per-element DOM event rather than manual hit-testing. It also carries the enhancements this layout is
+expected to grow into — organic planting outlines, overlay layers for actual sun and soil, zoom and
+pan via `viewBox` — while remaining styleable by the same theme tokens as the rest of the interface.
 
-**Rejected:** *Next.js* — server rendering, routing and build machinery this project has no use for,
-and the heaviest of the options to keep current. *Vanilla JavaScript with no build step*, which the
-template's starter assumes: attractive under the ten-minute rule, but an interactive layout grid with
-offline sync is a lot to hand-roll, and that work buys nothing for the garden.
+**Rejected:** *Canvas* — its advantage is thousands of elements with per-frame redraw, and seven
+borders of 144 cells with roughly 150 planted is two orders of magnitude short of that threshold. It
+would cost manual hit-testing on the app's most-used interaction, colours hard-coded in JavaScript
+instead of tokens, device-pixel-ratio handling and manual text, in exchange for headroom never
+collected. *An HTML/CSS grid* — simplest for a rectangular layout, but it cannot express non-square
+outlines at all, and layering overlays over the same coordinates becomes z-index management.
 
-**Accepted risk:** A build step exists, so the deployment is no longer "the repository is the site".
-Justified by what the build buys, but it does mean the template's `deploy.yml` needs adapting rather
-than copying.
+**Worth being clear about, because it is the actual constraint:** the renderer is not what limits
+organic shapes — the data is. A planting is a *set of cells*, so no renderer produces true curves.
+What SVG does allow, at any point and without a data change, is drawing a smoothed hull around a
+planting's cell set, which gives clumps that read as objects rather than pixels. True free-form
+shapes would need plantings to carry polygons, which is a domain change, not a rendering one.
+
+**Accepted risk:** Brush-style painting of planting areas, if it is ever wanted, is the one
+interaction canvas does genuinely better. The geometry-outside-the-renderer rule is what keeps that
+switch cheap.
+
+### No UI framework
+
+**Chosen:** TypeScript modules rendering SVG and DOM directly, bundled by Vite. No React.
+
+**Why:** Nearly all of this product's complexity is in the domain layer, which is framework-free by
+the architectural rule above — season resolution, task generation, decay, seed parsing. What remains
+is a thin shell of perhaps eight views over that. A framework earns its keep by taming UI state
+complexity, and there is not enough of it here to pay for the dependency.
+
+The question that settled it was asked directly: does a framework help an assistant that is writing
+the code? Marginally — React is heavily represented in training data and its declarative model makes
+stale-view bugs structurally hard. But that benefit is small once the domain layer holds the
+complexity, and it is bought with the largest source of dependency churn in the tree.
+
+**Rejected:** *React* — the honest tie-breaker if a framework were needed, being the one the owner
+knows, and it should be reached for the moment the tripwire below trips. *Next.js* — server
+rendering, routing and build machinery this project has no use for. *No build step at all*, which the
+template's starter assumes: attractive under the ten-minute rule, but it costs TypeScript, and a
+domain of month sets, three-valued foliage and four review states is precisely where a type checker
+earns its place.
+
+**Accepted risk:** Hand-written rendering is where stale views and leaked listeners come from, and
+those bugs are invisible to unit tests — they appear when you are standing in the garden. Mitigated
+by the render discipline in the architecture rules, and by the Playwright layer running at both
+viewports.
+
+**Tripwire.** Revisit this the moment UI state stops being local to a view — cross-view shared state,
+optimistic updates with rollback, or several interdependent panels reacting to one change. That is
+what a framework is actually for, and reaching for it then is not a reversal of this decision but the
+condition it was made under.
 
 ### Resolving what domain-spec left open
 
