@@ -1,0 +1,32 @@
+/* Minimal shell styling only. Real tokens and components arrive with style-guide.md in stage 3 —
+   nothing here is a design decision yet, and none of it should be treated as one. */
+
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 1.5rem;
+  /* Keeps the padding inside the viewport width rather than adding to it. Without this the mobile
+     viewport overflows horizontally, which implementation-spec.md §6 forbids and the mobile E2E
+     project asserts. */
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.build-identifier {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  /* Must wrap rather than widen the page: on a narrow phone an unbreakable identifier would be
+     the one thing forcing a horizontal scrollbar. */
+  overflow-wrap: anywhere;
+}
