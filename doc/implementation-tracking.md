@@ -75,8 +75,16 @@ change, opened on your phone.
       so an owner check would have been a permissive-looking placeholder with nothing behind it. The
       real check lands with the Firestore-and-auth backlog item, which is the first stage that has an
       identity to check against
-- [ ] Verify the whole loop end to end from a phone, not from the dev machine — **pending merge to
-      `main`**, since that is what the deploy workflow triggers on
+- [x] Verify the whole loop end to end from a phone, not from the dev machine — done, and the
+      identifier did the job it was built for: the live site read `f74e6e8 · 2026-08-24 11:06 UTC`,
+      matching `main` exactly, so the deploy was *confirmed* rather than assumed. Checked on a phone,
+      which is also what confirmed the mobile layout claim outside a test runner
+
+**Stage complete.** Worth recording what this stage actually bought, since deploying before there is
+anything worth deploying always looks like premature work: both failures it surfaced — a service
+account with hosting rights only, and an unregistered Firebase default bucket — were invisible to
+code review and to every local test. They were found against three source files and no data. Found
+at stage 6 instead, they would have arrived alongside real content and a real reason to hurry.
 
 ### Ad hoc — found and fixed along the way
 
