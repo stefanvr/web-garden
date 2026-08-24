@@ -2,9 +2,21 @@ rules_version = '2';
 
 // Cloud Storage access rules — see firestore.rules for the reasoning, which is identical.
 //
-// Nothing reads or writes yet. Photos are the first thing that will need this, and they arrive with
-// the photos item in implementation-tracking.md's backlog, together with the local outbox that
-// Firebase Storage requires because it has no offline upload queue of its own.
+// ⚠ NOT CURRENTLY DEPLOYED. This file is committed but the CI pipeline does not ship it, so it
+// describes an intent rather than the project's live configuration. Do not read it as a statement
+// about what the project enforces today.
+//
+// Why: the project has no Firebase default bucket registered, so deploying these fails with
+// "Firebase Storage has not been set up". Nothing uses Storage yet — no bucket, no client code, no
+// data — so these rules govern nothing, and blocking every deploy on them would be paying a real
+// cost to secure an imaginary asset.
+//
+// This is a deliberate, temporary exception to the rule that committed rules must be deployed rules,
+// and it is written here loudly precisely because that rule is otherwise worth keeping.
+//
+// It ends at the photos item in implementation-tracking.md's backlog: that stage sets up the bucket,
+// adds the local outbox Firebase Storage needs (it has no offline upload queue of its own), and puts
+// `storage` back on the deploy line in .github/workflows/firebase-hosting-merge.yml.
 
 service firebase.storage {
   match /b/{bucket}/o {

@@ -57,10 +57,19 @@ change, opened on your phone.
       page and the most likely thing to force a phone to scroll sideways
 - [x] `firebase init hosting:github` — service account created, key uploaded to the repository
       secret store by the CLI, both workflows generated
-- [x] Extend that workflow to deploy Firestore and Storage rules too. Rules go out **before**
-      hosting, so a new bundle never lands against rules that predate it. The pull-request workflow
-      deliberately does *not* deploy rules — they are project-wide with no per-channel equivalent,
-      so shipping them from a PR would apply unreviewed rules to live data
+- [x] Extend that workflow to deploy rules too. Rules go out **before** hosting, so a new bundle
+      never lands against rules that predate it. The pull-request workflow deliberately does *not*
+      deploy rules — they are project-wide with no per-channel equivalent, so shipping them from a PR
+      would apply unreviewed rules to live data.
+      - **Firestore only, diverging from the plan.** Two failures found this, both only visible once
+        the pipeline actually ran, which is the argument for building it in stage 1: first the
+        generated service account had hosting rights only and needed a rules-writing role granted;
+        then Storage failed because the project has no Firebase **default bucket** registered.
+        Enabling the Cloud Storage API and registering a Firebase default bucket are different
+        things, and only the second is what the CLI looks for. Storage is deferred rather than fixed
+        — nothing uses it yet, so its rules govern nothing, and blocking every deploy on them would
+        pay a real cost to secure an imaginary asset. Recorded in the photos backlog item, and
+        `storage.rules` says so in its own header rather than being silently skipped
 - [x] `firestore.rules` and `storage.rules` — **diverged from the plan:** they deny *everything*, not
       "everything except the one owner account". There is no owner identity in the application yet,
       so an owner check would have been a permissive-looking placeholder with nothing behind it. The
@@ -160,6 +169,11 @@ built. Each says what it needs and what is unresolved about it.
       queue, so a photo taken without signal must queue and drain later. Client-side resize to about
       1600px before upload. This is the wish that started the whole design, and it is deliberately
       not first: it is the one with the most hidden work.
+      - Also carries a debt from stage 1: register the Firebase **default bucket** (the project has
+        none, which is why `firebase deploy --only storage` fails with "Firebase Storage has not been
+        set up"), then put `storage` back on the rules deploy line in
+        `.github/workflows/firebase-hosting-merge.yml`. `storage.rules` is committed but unshipped
+        until then, and says so in its own header.
 - [ ] **The question and nag engine.** Needs review states (stage 2) and a write path. Domain-spec
       leaves the decay curve deliberately unsettled, so this wants a season of real use before its
       numbers are fixed — worth building the mechanism early and tuning it late.

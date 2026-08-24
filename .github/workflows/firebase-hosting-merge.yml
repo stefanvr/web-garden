@@ -6,9 +6,10 @@
 #   1. It pinned no Node version, so CI would use whatever the runner defaulted to rather than the
 #      version .nvmrc names. A build passing on one runtime and failing on another is the kind of
 #      difference that surfaces at the worst moment.
-#   2. It deployed hosting only. Firestore and Storage rules live in this repository too, and rules
-#      that are committed but never deployed are worse than no rules — the repository asserts a
-#      security posture the project does not actually have.
+#   2. It deployed hosting only. Firestore rules live in this repository too, and rules that are
+#      committed but never deployed are worse than no rules — the repository asserts a security
+#      posture the project does not actually have. (storage.rules is the one live exception, and it
+#      says so in its own header rather than being silently skipped.)
 
 name: Deploy to Firebase Hosting on merge
 on:
@@ -41,16 +42,22 @@ jobs:
       # governing what it may do.
       #
       # action-hosting-deploy handles hosting only, so this runs the CLI directly against the same
-      # service account. That account may need roles beyond hosting deployment to write rules — if
-      # this step fails on permissions, that is why.
-      - name: Deploy Firestore and Storage rules
+      # service account, which needs roles beyond hosting deployment to write rules.
+      #
+      # Firestore only, deliberately. storage.rules is committed but NOT deployed from here: the
+      # project has no Firebase default bucket registered, and the deploy fails with "Firebase
+      # Storage has not been set up". Nothing uses Storage yet — no bucket, no client code, no data —
+      # so its deny-all rules govern nothing, and blocking the pipeline on them would be paying a
+      # real cost for an imaginary one. Storage rejoins this line at the photos stage, which is when
+      # a bucket will exist and be worth governing. See storage.rules.
+      - name: Deploy Firestore rules
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SVR_GARDEN }}
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/service-account.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/service-account.json"
           npx --yes firebase-tools deploy \
-            --only firestore:rules,storage \
+            --only firestore:rules \
             --project svr-garden \
             --non-interactive
 
